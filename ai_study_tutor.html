@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Study Tutor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: #2a2a3d;
+    --accent: #7c6cfa;
+    --accent2: #fa6c9f;
+    --accent3: #6cfacc;
+    --text: #e8e8f0;
+    --muted: #888899;
+    --glow: rgba(124,108,250,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 20%, rgba(124,108,250,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 80% 80%, rgba(250,108,159,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .logo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 16px 6px 10px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .logo-badge span.dot {
+    width: 8px; height: 8px;
+    background: var(--accent3);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 1rem;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+
+  /* API KEY SECTION */
+  .api-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .api-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  input[type="text"], input[type="password"] {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus { border-color: var(--accent); }
+
+  .btn-save {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+
+  .btn-save:hover { opacity: 0.85; transform: translateY(-1px); }
+
+  .api-hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+
+  .api-hint a { color: var(--accent3); text-decoration: none; }
+  .api-hint a:hover { text-decoration: underline; }
+
+  /* DROP ZONE */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 20px;
+    padding: 60px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--surface);
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .drop-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(124,108,250,0.05) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: var(--surface2);
+  }
+
+  .drop-zone.drag-over::before { opacity: 1; }
+
+  .drop-zone.has-file {
+    border-color: var(--accent3);
+    border-style: solid;
+    padding: 32px 24px;
+  }
+
+  .drop-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .drop-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .drop-sub {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .file-info {
+    display: none;
+    align-items: center;
+    gap: 14px;
+    text-align: left;
+  }
+
+  .has-file .file-info { display: flex; }
+  .has-file .drop-default { display: none; }
+
+  .file-icon {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .file-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+  }
+
+  .file-size {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* SETTINGS ROW */
+  .settings-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .setting-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+  }
+
+  .setting-card label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  select:focus { border-color: var(--accent); }
+
+  /* VOICE SELECTOR */
+  #voiceSelect option { background: #1c1c28; }
+
+  /* START BUTTON */
+  .btn-start {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    color: #fff;
+    border: none;
+    border-radius: 16px;
+    padding: 20px;
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 0.02em;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-start::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.1);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn-start:hover::before { opacity: 1; }
+  .btn-start:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(124,108,250,0.4); }
+  .btn-start:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* PLAYER */
+  .player {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    display: none;
+    margin-bottom: 24px;
+  }
+
+  .player.visible { display: block; }
+
+  .player-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .player-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 100px;
+    background: var(--surface2);
+    color: var(--muted);
+  }
+
+  .status-badge.thinking { color: #facc6c; }
+  .status-badge.thinking .sdot { background: #facc6c; }
+  .status-badge.speaking { color: var(--accent3); }
+  .status-badge.speaking .sdot { background: var(--accent3); animation: pulse 1s infinite; }
+  .status-badge.paused { color: var(--accent2); }
+  .status-badge.paused .sdot { background: var(--accent2); }
+
+  .sdot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+
+  /* WAVEFORM */
+  .waveform {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 48px;
+    margin-bottom: 20px;
+  }
+
+  .wave-bar {
+    width: 3px;
+    background: linear-gradient(to top, var(--accent), var(--accent2));
+    border-radius: 4px;
+    height: 8px;
+    transition: height 0.1s;
+  }
+
+  .speaking-active .wave-bar:nth-child(odd) {
+    animation: wave1 0.8s infinite ease-in-out alternate;
+  }
+  .speaking-active .wave-bar:nth-child(even) {
+    animation: wave2 0.9s infinite ease-in-out alternate;
+  }
+  .speaking-active .wave-bar:nth-child(3n) {
+    animation: wave3 0.7s infinite ease-in-out alternate;
+  }
+
+  @keyframes wave1 { to { height: 40px; } }
+  @keyframes wave2 { to { height: 28px; } }
+  @keyframes wave3 { to { height: 48px; } }
+
+  /* PROGRESS */
+  .progress-area {
+    margin-bottom: 20px;
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  /* CONTROLS */
+  .controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .btn-ctrl {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-ctrl:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-ctrl.danger:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* TRANSCRIPT */
+  .transcript-area {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    display: none;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .transcript-area.visible { display: block; }
+
+  .transcript-area::-webkit-scrollbar { width: 4px; }
+  .transcript-area::-webkit-scrollbar-track { background: transparent; }
+  .transcript-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .transcript-header {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .segment {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .segment:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .segment-num {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .segment-text {
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text);
+  }
+
+  .segment.current .segment-text {
+    color: #fff;
+  }
+
+  .segment.current {
+    background: rgba(124,108,250,0.06);
+    border-radius: 12px;
+    padding: 16px;
+    border-bottom: none;
+    margin-bottom: 20px;
+  }
+
+  /* LOADING STATE */
+  .loading-text {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    padding: 12px 0;
+    display: none;
+  }
+
+  .loading-text.visible { display: block; }
+
+  /* TYPING DOTS */
+  .dots::after {
+    content: '';
+    animation: dots 1.5s infinite;
+  }
+  @keyframes dots {
+    0%   { content: ''; }
+    25%  { content: '.'; }
+    50%  { content: '..'; }
+    75%  { content: '...'; }
+    100% { content: ''; }
+  }
+
+  /* toast */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 13px;
+    color: var(--text);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 100;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .toast.error { border-color: var(--accent2); color: var(--accent2); }
+  .toast.success { border-color: var(--accent3); color: var(--accent3); }
+
+  @media (max-width: 600px) {
+    .settings-row { grid-template-columns: 1fr; }
+    .controls { flex-wrap: wrap; }
+  }
+
+  input[type="file"] { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo-badge"><span class="dot"></span> Powered by Gemini AI</div>
+    <h1>AI Study Tutor</h1>
+    <p class="subtitle">Drop your study material. Sit back. Let AI teach it to you out loud.</p>
+  </header>
+
+  <!-- API KEY -->
+  <div class="api-section">
+    <div class="section-label">🔑 Gemini API Key</div>
+    <div class="api-row">
+      <input type="password" id="apiKeyInput" placeholder="Paste your Gemini API key here…" />
+      <button class="btn-save" onclick="saveKey()">Save</button>
+    </div>
+    <p class="api-hint">
+      Free key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a> — no credit card needed. Key is saved locally in your browser only.
+    </p>
+  </div>
+
+  <!-- DROP ZONE -->
+  <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+    <div class="drop-default">
+      <span class="drop-icon">📂</span>
+      <div class="drop-title">Drop your study file here</div>
+      <p class="drop-sub">TXT, PDF (text-based), or paste content below · Click to browse</p>
+    </div>
+    <div class="file-info">
+      <div class="file-icon" id="fileIcon">📄</div>
+      <div>
+        <div class="file-name" id="fileName">—</div>
+        <div class="file-size" id="fileSize">—</div>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="fileInput" accept=".txt,.pdf,.md,.csv,.json,.html" />
+
+  <!-- OR PASTE -->
+  <div class="api-section" style="margin-bottom:24px;">
+    <div class="section-label">📝 Or paste your study content directly</div>
+    <textarea id="pasteArea"
+      style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.7;resize:vertical;min-height:100px;outline:none;"
+      placeholder="Paste your notes, textbook excerpt, lecture slides content here…"></textarea>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="settings-row">
+    <div class="setting-card">
+      <label>🎤 Voice</label>
+      <select id="voiceSelect"><option value="">Loading voices…</option></select>
+    </div>
+    <div class="setting-card">
+      <label>📚 Teaching Style</label>
+      <select id="styleSelect">
+        <option value="lecture">Engaging Lecture</option>
+        <option value="story">Story & Analogy</option>
+        <option value="exam">Exam-focused (key points)</option>
+        <option value="casual">Casual Chat</option>
+      </select>
+    </div>
+    <div class="setting-card">
+      <label>⚡ Speech Speed</label>
+      <select id="speedSelect">
+        <option value="0.85">Slow (0.85x)</option>
+        <option value="1" selected>Normal (1x)</option>
+        <option value="1.15">Slightly Fast (1.15x)</option>
+        <option value="1.3">Fast (1.3x)</option>
+      </select>
+    </div>
+    <div class="setting-card">
+      <label>📖 Depth</label>
+      <select id="depthSelect">
+        <option value="overview">Quick Overview</option>
+        <option value="standard" selected>Standard (balanced)</option>
+        <option value="deep">Deep Dive (thorough)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- START BUTTON -->
+  <button class="btn-start" id="startBtn" onclick="startSession()" disabled>
+    🎓 Start AI Lecture
+  </button>
+
+  <!-- PLAYER -->
+  <div class="player" id="player">
+    <div class="player-header">
+      <div class="player-title">AI Tutor — Live Session</div>
+      <div class="status-badge" id="statusBadge">
+        <span class="sdot"></span>
+        <span id="statusText">Ready</span>
+      </div>
+    </div>
+    <div class="waveform" id="waveform">
+      <!-- bars generated by JS -->
+    </div>
+    <div class="progress-area">
+      <div class="progress-label">
+        <span id="segmentLabel">Segment 0 / 0</span>
+        <span id="timeLabel">—</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="loading-text" id="loadingText"><span class="dots">Generating next segment</span></div>
+    <div class="controls">
+      <button class="btn-ctrl" id="pauseBtn" onclick="togglePause()">⏸ Pause</button>
+      <button class="btn-ctrl" onclick="skipSegment()">⏭ Skip</button>
+      <button class="btn-ctrl danger" onclick="stopSession()">⏹ Stop</button>
+    </div>
+  </div>
+
+  <!-- TRANSCRIPT -->
+  <div class="transcript-area" id="transcriptArea">
+    <div class="transcript-header">📃 Transcript</div>
+    <div id="transcriptContent"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── GLOBALS ───────────────────────────────────────────────────────────────
+let studyContent = '';
+let segments = [];
+let currentSegIdx = 0;
+let totalSegments = 0;
+let isPaused = false;
+let isSpeaking = false;
+let stopRequested = false;
+let currentUtterance = null;
+let voices = [];
+let sessionStartTime = null;
+
+const GEMINI_MODEL = 'gemini-1.5-flash-latest';
+const SEGMENT_WORDS_TARGET = 600; // ~3-4 min per segment at normal speed
+
+// ─── INIT ──────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  buildWaveform();
+  loadVoices();
+  loadSavedKey();
+
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+
+  document.getElementById('pasteArea').addEventListener('input', () => {
+    studyContent = document.getElementById('pasteArea').value.trim();
+    updateStartButton();
+  });
+});
+
+function buildWaveform() {
+  const wf = document.getElementById('waveform');
+  for (let i = 0; i < 28; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'wave-bar';
+    wf.appendChild(bar);
+  }
+}
+
+function loadVoices() {
+  voices = window.speechSynthesis.getVoices();
+  const sel = document.getElementById('voiceSelect');
+  sel.innerHTML = '';
+
+  // Prefer natural / neural voices
+  const priority = [
+    v => v.name.includes('Neural') || v.name.includes('natural'),
+    v => v.lang.startsWith('en') && !v.name.includes('Compact'),
+    v => v.lang.startsWith('en'),
+    v => true
+  ];
+
+  let sorted = [];
+  for (const test of priority) {
+    const matched = voices.filter(v => !sorted.includes(v) && test(v));
+    sorted = sorted.concat(matched);
+  }
+
+  sorted.forEach((v, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `${v.name} (${v.lang})`;
+    // Pre-select a good English voice
+    if (v.name.includes('Google UK English Female') ||
+        v.name.includes('Samantha') ||
+        v.name.includes('Karen') ||
+        v.name.includes('Daniel')) {
+      opt.selected = true;
+    }
+    sel.appendChild(opt);
+  });
+}
+
+function loadSavedKey() {
+  const saved = localStorage.getItem('gemini_api_key');
+  if (saved) {
+    document.getElementById('apiKeyInput').value = saved;
+    updateStartButton();
+  }
+}
+
+function saveKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) { showToast('Enter a key first', 'error'); return; }
+  localStorage.setItem('gemini_api_key', key);
+  updateStartButton();
+  showToast('API key saved ✓', 'success');
+}
+
+function updateStartButton() {
+  const hasKey = !!document.getElementById('apiKeyInput').value.trim() ||
+                 !!localStorage.getItem('gemini_api_key');
+  const hasContent = !!studyContent;
+  document.getElementById('startBtn').disabled = !(hasKey && hasContent);
+}
+
+// ─── FILE HANDLING ─────────────────────────────────────────────────────────
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropZone.classList.add('drag-over');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) handleFile(fileInput.files[0]);
+});
+
+async function handleFile(file) {
+  const icons = { 'application/pdf': '📕', 'text/plain': '📄', 'text/html': '🌐' };
+  document.getElementById('fileIcon').textContent = icons[file.type] || '📄';
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = formatSize(file.size);
+  dropZone.classList.add('has-file');
+
+  try {
+    if (file.type === 'application/pdf') {
+      studyContent = await extractPDFText(file);
+    } else {
+      studyContent = await file.text();
+    }
+    if (!studyContent || studyContent.length < 20) {
+      showToast('Could not read file content — try pasting instead', 'error');
+      studyContent = '';
+    } else {
+      showToast(`Loaded ${formatSize(studyContent.length)} of text ✓`, 'success');
+    }
+  } catch (e) {
+    showToast('Error reading file — try pasting content', 'error');
+    studyContent = '';
+  }
+  updateStartButton();
+}
+
+async function extractPDFText(file) {
+  // Try loading pdf.js from CDN
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.onload = async () => {
+      try {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let text = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          text += content.items.map(item => item.str).join(' ') + '\n\n';
+        }
+        resolve(text);
+      } catch(e) {
+        resolve('');
+      }
+    };
+    script.onerror = () => resolve('');
+    document.head.appendChild(script);
+  });
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(2) + ' MB';
+}
+
+// ─── SESSION ────────────────────────────────────────────────────────────────
+async function startSession() {
+  const apiKey = document.getElementById('apiKeyInput').value.trim() ||
+                 localStorage.getItem('gemini_api_key');
+  if (!apiKey) { showToast('Add your Gemini API key first', 'error'); return; }
+  if (!studyContent) { showToast('Add study material first', 'error'); return; }
+
+  stopRequested = false;
+  segments = [];
+  currentSegIdx = 0;
+  isPaused = false;
+  sessionStartTime = Date.now();
+
+  document.getElementById('player').classList.add('visible');
+  document.getElementById('transcriptArea').classList.add('visible');
+  document.getElementById('transcriptContent').innerHTML = '';
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('startBtn').textContent = '⏳ Session running…';
+
+  setStatus('thinking');
+
+  // Plan the lecture outline first
+  const outline = await planOutline(apiKey);
+  if (!outline) { setStatus(''); showToast('Failed to plan lecture — check your API key', 'error'); resetUI(); return; }
+
+  totalSegments = outline.sections.length;
+  document.getElementById('segmentLabel').textContent = `Segment 0 / ${totalSegments}`;
+
+  // Teach each section
+  for (let i = 0; i < outline.sections.length; i++) {
+    if (stopRequested) break;
+    currentSegIdx = i + 1;
+    updateProgress();
+
+    setStatus('thinking');
+    showLoading(true);
+    const text = await generateSegment(apiKey, outline.sections[i], i, outline.sections.length, outline.title);
+    showLoading(false);
+
+    if (!text || stopRequested) break;
+
+    addTranscriptSegment(i + 1, outline.sections[i].title, text);
+    await speakText(text, i + 1);
+
+    if (stopRequested) break;
+
+    // brief pause between segments
+    await sleep(800);
+  }
+
+  if (!stopRequested) {
+    // Closing remarks
+    setStatus('thinking');
+    showLoading(true);
+    const closing = await generateClosing(apiKey, outline.title);
+    showLoading(false);
+    if (closing) {
+      addTranscriptSegment('✓', 'Summary & Tips', closing);
+      await speakText(closing, 'end');
+    }
+  }
+
+  setStatus('');
+  document.getElementById('waveform').classList.remove('speaking-active');
+  showToast('Lecture complete! 🎓', 'success');
+  resetUI();
+}
+
+// ─── GEMINI CALLS ──────────────────────────────────────────────────────────
+async function planOutline(apiKey) {
+  const style = document.getElementById('styleSelect').value;
+  const depth = document.getElementById('depthSelect').value;
+
+  const depthMap = { overview: 3, standard: 6, deep: 10 };
+  const numSections = depthMap[depth] || 6;
+
+  const prompt = `You are an expert educator. Analyze this study material and create a structured lecture plan.
+
+STUDY MATERIAL:
+---
+${studyContent.slice(0, 12000)}
+---
+
+Return ONLY a JSON object (no markdown, no explanation) in this exact format:
+{
+  "title": "Short descriptive title of the topic",
+  "sections": [
+    { "title": "Section Name", "focus": "Specific concepts to cover in this section", "keywords": ["key1","key2"] }
+  ]
+}
+
+Create exactly ${numSections} logical sections that cover the entire material progressively.
+Teaching style: ${style}.`;
+
+  try {
+    const res = await callGemini(apiKey, prompt);
+    const json = JSON.parse(res.replace(/```json|```/g, '').trim());
+    return json;
+  } catch(e) {
+    console.error('Outline error:', e);
+    // Fallback outline
+    return {
+      title: 'Study Session',
+      sections: [
+        { title: 'Introduction & Overview', focus: 'Main concepts and context', keywords: [] },
+        { title: 'Core Content', focus: 'Main body of the material', keywords: [] },
+        { title: 'Key Details & Examples', focus: 'Important details and examples', keywords: [] },
+        { title: 'Applications & Implications', focus: 'Real-world applications', keywords: [] },
+        { title: 'Review & Summary', focus: 'Recap of all key points', keywords: [] }
+      ]
+    };
+  }
+}
+
+async function generateSegment(apiKey, section, idx, total, topicTitle) {
+  const style = document.getElementById('styleSelect').value;
+  const depth = document.getElementById('depthSelect').value;
+
+  const stylePrompt = {
+    lecture: 'Speak like an enthusiastic university professor — clear, engaging, with rhythm and emphasis. Use rhetorical questions. Build suspense before revealing answers.',
+    story: 'Use vivid analogies and mini-stories. Make abstract concepts tangible with "imagine if..." scenarios. Be warm and narrative.',
+    exam: 'Focus sharply on what matters for exams. Use phrases like "This is very important", "You need to remember this", "A common exam question is...". Be precise.',
+    casual: 'Be conversational and friendly, like explaining to a smart friend over coffee. Use casual language, light humor, and relatable examples.'
+  }[style];
+
+  const depthNote = {
+    overview: 'Keep it concise — hit the key points efficiently.',
+    standard: 'Be thorough but not exhaustive. Give clear explanations with 1-2 examples per concept.',
+    deep: 'Go deep. Explain the "why" behind everything. Multiple examples, edge cases, connections to other concepts.'
+  }[depth];
+
+  const prompt = `You are teaching a student who has a very important exam coming up soon. They need to understand this material deeply but have limited time.
+
+TOPIC: ${topicTitle}
+SECTION ${idx+1} of ${total}: "${section.title}"
+FOCUS FOR THIS SECTION: ${section.focus}
+KEY CONCEPTS: ${section.keywords?.join(', ') || 'see focus'}
+
+FULL STUDY MATERIAL (for reference):
+---
+${studyContent.slice(0, 10000)}
+---
+
+STYLE: ${stylePrompt}
+DEPTH: ${depthNote}
+
+Generate a spoken lecture for THIS section only. Requirements:
+- Write ONLY the spoken words (no stage directions, no "[pause]", no asterisks, no markdown)
+- Start with a smooth transition from the overall topic (e.g. "Now, let's talk about..." or "Building on that...")
+- Speak for a MINIMUM of 500 words — this is audio content so be generous
+- Use natural speech patterns: vary sentence length, ask rhetorical questions, answer them
+- Give concrete examples, comparisons, and analogies
+- End with a bridge to the next section (if not the last section)
+- DO NOT say "In conclusion" yet — that comes at the end
+
+Write the lecture now:`;
+
+  try {
+    return await callGemini(apiKey, prompt);
+  } catch(e) {
+    console.error('Segment error:', e);
+    return null;
+  }
+}
+
+async function generateClosing(apiKey, title) {
+  const style = document.getElementById('styleSelect').value;
+
+  const prompt = `You just finished teaching a lecture on: "${title}"
+
+Generate a warm, encouraging closing summary (spoken words only, no markdown) that:
+- Quickly recaps the 4-5 most important takeaways from the material
+- Gives 2-3 practical exam tips specific to this topic
+- Ends with motivational words for the upcoming exam
+- Minimum 200 words
+- Natural speech only, no formatting
+
+Write the closing now:`;
+
+  try {
+    return await callGemini(apiKey, prompt);
+  } catch(e) { return null; }
+}
+
+async function callGemini(apiKey, prompt) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+  const body = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: 0.85,
+      maxOutputTokens: 2048,
+      topP: 0.95
+    }
+  };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+// ─── SPEECH ────────────────────────────────────────────────────────────────
+function speakText(text, segId) {
+  return new Promise((resolve) => {
+    if (stopRequested) { resolve(); return; }
+
+    window.speechSynthesis.cancel();
+
+    const voiceIdx = parseInt(document.getElementById('voiceSelect').value);
+    const rate = parseFloat(document.getElementById('speedSelect').value);
+    const selectedVoice = voices[voiceIdx];
+
+    // Split into smaller chunks for reliability (browser limit varies)
+    const chunks = splitIntoChunks(text, 200);
+    let chunkIdx = 0;
+
+    setStatus('speaking');
+    document.getElementById('waveform').classList.add('speaking-active');
+
+    const speakChunk = () => {
+      if (stopRequested || chunkIdx >= chunks.length) {
+        document.getElementById('waveform').classList.remove('speaking-active');
+        resolve();
+        return;
+      }
+
+      if (isPaused) {
+        setTimeout(speakChunk, 300);
+        return;
+      }
+
+      const utt = new SpeechSynthesisUtterance(chunks[chunkIdx]);
+      currentUtterance = utt;
+
+      if (selectedVoice) utt.voice = selectedVoice;
+      utt.rate = rate;
+      utt.pitch = 1.05;
+      utt.volume = 1;
+
+      utt.onend = () => {
+        chunkIdx++;
+        speakChunk();
+      };
+
+      utt.onerror = (e) => {
+        if (e.error !== 'interrupted') {
+          chunkIdx++;
+          speakChunk();
+        } else {
+          resolve();
+        }
+      };
+
+      window.speechSynthesis.speak(utt);
+    };
+
+    speakChunk();
+  });
+}
+
+function splitIntoChunks(text, maxWords) {
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  const chunks = [];
+  let current = '';
+
+  for (const sentence of sentences) {
+    const words = (current + ' ' + sentence).trim().split(' ').length;
+    if (words > maxWords && current) {
+      chunks.push(current.trim());
+      current = sentence;
+    } else {
+      current += ' ' + sentence;
+    }
+  }
+  if (current.trim()) chunks.push(current.trim());
+  return chunks.filter(c => c.length > 0);
+}
+
+// ─── UI HELPERS ────────────────────────────────────────────────────────────
+function setStatus(state) {
+  const badge = document.getElementById('statusBadge');
+  const text = document.getElementById('statusText');
+  badge.className = 'status-badge ' + state;
+  const labels = { thinking: 'Generating…', speaking: 'Speaking', paused: 'Paused', '': 'Done' };
+  text.textContent = labels[state] || state;
+}
+
+function updateProgress() {
+  const pct = totalSegments > 0 ? (currentSegIdx / totalSegments) * 100 : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('segmentLabel').textContent = `Segment ${currentSegIdx} / ${totalSegments}`;
+
+  if (sessionStartTime) {
+    const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+    const m = Math.floor(elapsed / 60), s = elapsed % 60;
+    document.getElementById('timeLabel').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  }
+}
+
+function addTranscriptSegment(num, title, text) {
+  const area = document.getElementById('transcriptContent');
+
+  // Remove 'current' from previous
+  area.querySelectorAll('.segment.current').forEach(el => el.classList.remove('current'));
+
+  const div = document.createElement('div');
+  div.className = 'segment current';
+  div.id = `seg-${num}`;
+  div.innerHTML = `<div class="segment-num">SEGMENT ${num} — ${title.toUpperCase()}</div>
+                   <div class="segment-text">${text.replace(/\n/g, '<br>')}</div>`;
+  area.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showLoading(show) {
+  document.getElementById('loadingText').classList.toggle('visible', show);
+}
+
+function togglePause() {
+  isPaused = !isPaused;
+  const btn = document.getElementById('pauseBtn');
+  if (isPaused) {
+    window.speechSynthesis.pause();
+    setStatus('paused');
+    document.getElementById('waveform').classList.remove('speaking-active');
+    btn.textContent = '▶ Resume';
+  } else {
+    window.speechSynthesis.resume();
+    setStatus('speaking');
+    document.getElementById('waveform').classList.add('speaking-active');
+    btn.textContent = '⏸ Pause';
+  }
+}
+
+function skipSegment() {
+  window.speechSynthesis.cancel();
+  showToast('Skipped to next segment', '');
+}
+
+function stopSession() {
+  stopRequested = true;
+  window.speechSynthesis.cancel();
+  setStatus('');
+  document.getElementById('waveform').classList.remove('speaking-active');
+  resetUI();
+  showToast('Session stopped', '');
+}
+
+function resetUI() {
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('startBtn').textContent = '🎓 Start AI Lecture';
+  document.getElementById('pauseBtn').textContent = '⏸ Pause';
+  isPaused = false;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = 'toast', 3200);
+}
+
+// Keep speech synthesis alive (Chrome bug workaround)
+setInterval(() => {
+  if (isSpeaking && !isPaused && window.speechSynthesis.paused) {
+    window.speechSynthesis.resume();
+  }
+}, 5000);
+</script>
+</body>
+</html>
